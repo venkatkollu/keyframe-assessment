@@ -332,6 +332,34 @@ async def submit_transcription(
         "message": "Transcription job accepted and queued."
     }
 
+@app.get("/v1/jobs", response_model=List[TranscriptionJobStatusResponse])
+def list_jobs(
+    api_key: APIKey = Depends(get_api_key),
+    session: Session = Depends(get_session)
+):
+    """Retrieve all transcription jobs for the current API key."""
+    statement = select(TranscriptionJob).where(TranscriptionJob.api_key_id == api_key.id).order_by(TranscriptionJob.created_at.desc())
+    jobs = session.exec(statement).all()
+    response_jobs = []
+    for job in jobs:
+        res_data = {
+            "job_id": job.id,
+            "status": job.status,
+            "input_source": job.input_source,
+            "created_at": job.created_at.isoformat(),
+            "updated_at": job.updated_at.isoformat()
+        }
+        if job.status == "completed":
+            res_data["result"] = json.loads(job.result_json) if job.result_json else None
+        elif job.status == "failed":
+            res_data["error"] = {
+                "code": "PIPELINE_ERROR",
+                "message": job.error_message,
+                "suggested_action": "Verify upstream services are operational or retry with a different audio file format."
+            }
+        response_jobs.append(res_data)
+    return response_jobs
+
 @app.get("/v1/jobs/{job_id}", response_model=TranscriptionJobStatusResponse)
 def get_job_status(
     job_id: str,
