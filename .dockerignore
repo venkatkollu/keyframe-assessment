@@ -21,5 +21,4 @@ uploads/
 # Ignore local secrets and service account credentials
 .env
 .env.*
-long-memory-*.json
 gcp_credentials.json
