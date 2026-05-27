@@ -149,25 +149,24 @@ def chirp3_diarize(wav_path: str, lang_codes: list[str]) -> tuple[str, int]:
     """Run Chirp 3 diarization. Returns (formatted_text, n_speakers)."""
     if not GCP_PROJECT_ID:
         return "", 0
-    from google.cloud.speech_v2 import SpeechClient
-    from google.cloud.speech_v2.types import cloud_speech
-    from google.api_core.client_options import ClientOptions
+    from google.cloud import speech_v2
+    from google.api_core import client_options
 
-    client = SpeechClient(
-        client_options=ClientOptions(api_endpoint="us-speech.googleapis.com")
+    client = speech_v2.SpeechClient(
+        client_options=client_options.ClientOptions(api_endpoint="us-speech.googleapis.com")
     )
     with open(wav_path, "rb") as f:
         audio = f.read()
     audio_seconds = len(audio) / (16000 * 2)
     usage_tracker.record_chirp3(audio_seconds)
-    config = cloud_speech.RecognitionConfig(
-        auto_decoding_config=cloud_speech.AutoDetectDecodingConfig(),
+    config = speech_v2.types.RecognitionConfig(
+        auto_decoding_config=speech_v2.types.AutoDetectDecodingConfig(),
         language_codes=lang_codes, model="chirp_3",
-        features=cloud_speech.RecognitionFeatures(
-            diarization_config=cloud_speech.SpeakerDiarizationConfig(),
+        features=speech_v2.types.RecognitionFeatures(
+            diarization_config=speech_v2.types.SpeakerDiarizationConfig(),
         ),
     )
-    request = cloud_speech.RecognizeRequest(
+    request = speech_v2.types.RecognizeRequest(
         recognizer=f"projects/{GCP_PROJECT_ID}/locations/us/recognizers/_",
         config=config, content=audio,
     )
@@ -176,14 +175,14 @@ def chirp3_diarize(wav_path: str, lang_codes: list[str]) -> tuple[str, int]:
     except Exception as e:
         if "speaker_diarization" in str(e) and lang_codes != ["auto"]:
             log(f"  chirp3: diarization unsupported for {lang_codes}, retrying with auto")
-            config = cloud_speech.RecognitionConfig(
-                auto_decoding_config=cloud_speech.AutoDetectDecodingConfig(),
+            config = speech_v2.types.RecognitionConfig(
+                auto_decoding_config=speech_v2.types.AutoDetectDecodingConfig(),
                 language_codes=["auto"], model="chirp_3",
-                features=cloud_speech.RecognitionFeatures(
-                    diarization_config=cloud_speech.SpeakerDiarizationConfig(),
+                features=speech_v2.types.RecognitionFeatures(
+                    diarization_config=speech_v2.types.SpeakerDiarizationConfig(),
                 ),
             )
-            request = cloud_speech.RecognizeRequest(
+            request = speech_v2.types.RecognizeRequest(
                 recognizer=f"projects/{GCP_PROJECT_ID}/locations/us/recognizers/_",
                 config=config, content=audio,
             )
