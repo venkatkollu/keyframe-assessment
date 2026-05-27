@@ -1,0 +1,25 @@
+# Ignore Git repository metadata
+.git
+.gitignore
+
+# Ignore local virtual environment
+.venv
+venv/
+env/
+
+# Ignore cache, temp files, and database files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+cache/
+uploads/
+*.db
+*.db-journal
+
+# Ignore local secrets and service account credentials
+.env
+.env.*
+long-memory-*.json
+gcp_credentials.json

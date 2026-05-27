@@ -33,6 +33,7 @@ def test_api():
     print("\n=== Creating API Key ===")
     r = requests.post(
         f"{BASE_URL}/v1/keys",
+        headers={"X-Admin-Token": "admin_secret_token_123"},
         json={"owner": "TestRunner", "rate_limit_rpm": 3, "quota_limit_usd": 5.0}
     )
     print(f"Status code: {r.status_code}")
@@ -64,6 +65,7 @@ def test_api():
     print("\n=== Creating a Second API Key for Transcription (Limit = 60 RPM) ===")
     r = requests.post(
         f"{BASE_URL}/v1/keys",
+        headers={"X-Admin-Token": "admin_secret_token_123"},
         json={"owner": "TestRunner2", "rate_limit_rpm": 60, "quota_limit_usd": 10.0}
     )
     print(f"Status code: {r.status_code}")

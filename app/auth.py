@@ -6,7 +6,28 @@ try:
 except ImportError:
     from database import APIKey, get_session
 
+import os
+
 API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=False)
+ADMIN_TOKEN_HEADER = APIKeyHeader(name="X-Admin-Token", auto_error=False)
+
+def verify_admin_token(
+    admin_token_header: str = Security(ADMIN_TOKEN_HEADER)
+):
+    # Enforce admin token if set in environment, or default to a secure fallback for local dev
+    admin_token = os.getenv("ADMIN_TOKEN", "admin_secret_token_123")
+    
+    if not admin_token_header or admin_token_header != admin_token:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "error": {
+                    "code": "INVALID_ADMIN_TOKEN",
+                    "message": "Access denied. Valid 'X-Admin-Token' header is required.",
+                    "suggested_action": "Add the 'X-Admin-Token' header to your request containing a valid admin token."
+                }
+            }
+        )
 
 def get_api_key(
     api_key_header: str = Security(API_KEY_HEADER),

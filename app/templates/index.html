@@ -1658,6 +1658,13 @@
                 </div>
             </div>
 
+            <div class="sidebar-search" style="border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">
+                <div class="search-container">
+                    <svg class="search-icon" style="color: #6b7280;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                    <input type="password" id="adminTokenInput" class="search-input" placeholder="Admin Token (X-Admin-Token)..." oninput="saveAdminToken(this.value)">
+                </div>
+            </div>
+
             <div class="sidebar-title">
                 API Keys (Workspace)
                 <button onclick="loadKeys()" class="btn-refresh" title="Refresh workspace keys">
@@ -2088,6 +2095,9 @@
         };
 
         window.addEventListener('DOMContentLoaded', () => {
+            const adminToken = localStorage.getItem('admin_token') || '';
+            document.getElementById('adminTokenInput').value = adminToken;
+
             loadKeys().then(() => {
                 if (keysList.length > 0) {
                     selectKey(keysList[0]);
@@ -2096,6 +2106,15 @@
             applyTemplate('transcribe_url');
             initDragAndDrop();
         });
+
+        function saveAdminToken(val) {
+            localStorage.setItem('admin_token', val);
+            loadKeys().then(() => {
+                if (keysList.length > 0) {
+                    selectKey(keysList[0]);
+                }
+            });
+        }
 
         // Floating Toast Notice
         function showToast(message, isError = false) {
@@ -2443,9 +2462,15 @@
         // API Key actions
         async function loadKeys() {
             try {
-                const response = await fetch('/v1/keys');
+                const adminToken = localStorage.getItem('admin_token') || '';
+                const response = await fetch('/v1/keys', {
+                    headers: { 'X-Admin-Token': adminToken }
+                });
                 if (response.ok) {
                     keysList = await response.json();
+                    renderKeysList();
+                } else if (response.status === 403) {
+                    keysList = [];
                     renderKeysList();
                 }
             } catch (err) {
@@ -2564,14 +2589,20 @@
 
         async function toggleKeyStatus(id, currentStatus) {
             try {
+                const adminToken = localStorage.getItem('admin_token') || '';
                 const response = await fetch(`/v1/keys/${id}`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken
+                    },
                     body: JSON.stringify({ is_active: !currentStatus })
                 });
                 if (response.ok) {
                     showToast(`API Key status updated!`);
                     loadKeys();
+                } else if (response.status === 403) {
+                    showToast('Forbidden: Invalid Admin Token.', true);
                 } else {
                     showToast('Error updating status.', true);
                 }
@@ -2592,9 +2623,13 @@
             }
 
             try {
+                const adminToken = localStorage.getItem('admin_token') || '';
                 const response = await fetch('/v1/keys', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken
+                    },
                     body: JSON.stringify({ owner, rate_limit_rpm: rpm, quota_limit_usd: quota })
                 });
                 if (response.ok) {
@@ -2612,6 +2647,8 @@
                         const newKey = keysList.find(k => k.key === data.key);
                         if (newKey) selectKey(newKey);
                     });
+                } else if (response.status === 403) {
+                    showToast('Forbidden: Invalid Admin Token.', true);
                 } else {
                     showToast('Error generating API key.', true);
                 }
