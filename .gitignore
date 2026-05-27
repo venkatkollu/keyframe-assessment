@@ -11,3 +11,6 @@ venv/
 dist/
 build/
 long-memory-481406-i3-a87ef482f961.json
+.env
+*.db
+uploads/

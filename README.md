@@ -122,11 +122,46 @@ for seg in result["diarizedTranscript"]:
 ## File Structure
 
 ```
-├── transcribe.py      # Main pipeline + CLI
-├── schemas.py         # Pydantic models + Gemini prompt
-├── config.py          # Client singletons, usage tracker, retry logic
-├── rate_limiter.py    # Thread-safe token-bucket rate limiter
-├── .env.example       # Environment variable template
-├── requirements.txt   # Python dependencies
-└── TASK.md            # Intern assessment task brief
+├── app/
+│   ├── auth.py          # API authentication & billing checks
+│   ├── database.py      # SQLite database setup & ORM schemas
+│   ├── main.py          # FastAPI application & API endpoints
+│   ├── mcp_server.py    # Model Context Protocol (MCP) server
+│   └── rate_limiter.py  # Token-bucket client rate limiting
+├── transcribe.py        # Main pipeline + CLI
+├── schemas.py           # Pydantic models + Gemini prompt
+├── config.py            # Client singletons, usage tracker, retry logic
+├── rate_limiter.py      # Thread-safe token-bucket rate limiter for models
+├── .env                 # Environment config & credentials
+├── requirements.txt     # Python dependencies
+├── Dockerfile           # Deployment container definition
+├── llms.txt             # LLM-friendly API documentation
+├── DECISIONS.md         # Architecture, pricing & engineering decisions
+└── test_api.py          # Automated verification script
 ```
+
+## Running the API Server
+
+1. **Start the server**:
+   ```bash
+   .venv\Scripts\uvicorn app.main:app --reload
+   ```
+2. **Access Interactive Docs**:
+   Go to `http://127.0.0.1:8000/docs` to view the interactive Swagger OpenAPI docs.
+
+## Running the MCP Server
+
+To run the MCP server locally over stdio (e.g. for integration with Claude Desktop or Cursor):
+```bash
+.venv\Scripts\python app/mcp_server.py
+```
+
+## Running Tests
+
+Run the automated integration test suite:
+1. Ensure the API server is running at `http://127.0.0.1:8000`.
+2. Run the test script:
+   ```bash
+   .venv\Scripts\python test_api.py
+   ```
+

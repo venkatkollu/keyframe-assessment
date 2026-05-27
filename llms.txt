@@ -1,0 +1,144 @@
+# Agent-First Transcription API
+
+High-performance, multi-stage transcription API designed specifically for AI agents, developers, and autonomous workflows. It processes video and audio content to produce structured English transcripts with speaker diarization, language detection, and translation.
+
+## Core Features
+- **Local Language Detection**: Fast Whisper tiny-based language detection.
+- **Speaker Diarization**: Chirp 3-powered voiceprint clustering (distinguishes creator, AI text-to-speech, narrators, and multiple people).
+- **Structured Transcription**: Understood in context by Gemini 2.5 Flash (with fallback to Gemini 2.5 Pro for sparse files).
+- **On-Screen Text OCR**: Merges spoken text with on-screen text overlays into a single, cohesive timeline.
+
+## API Key Authentication
+All API endpoints require authentication via the `X-API-Key` header.
+```http
+X-API-Key: sk_your_api_key_here
+```
+
+## Endpoints
+
+### 1. Submit Transcription
+`POST /v1/transcribe`
+
+Accepts either a local file upload (multipart/form-data) up to 100MB or a public URL. This is an asynchronous endpoint returning a `202 Accepted` status.
+
+**Parameters:**
+- `file` (binary, optional): Multipart file upload.
+- `url_req_str` (string/JSON, optional): Public URL to transcribe (e.g. `{"url": "https://example.com/video.mp4"}`).
+- `model` (string, optional): Specific Gemini model override (e.g., `gemini-2.5-pro` to bypass diarization).
+
+**Response (202 Accepted):**
+```json
+{
+  "job_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "status": "pending",
+  "status_url": "/v1/jobs/9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "message": "Transcription job accepted and queued."
+}
+```
+
+---
+
+### 2. Check Job Status & Results
+`GET /v1/jobs/{job_id}`
+
+Retrieves the current status of the transcription job. Keep polling until status is `completed` or `failed`.
+
+**Response (200 OK - completed):**
+```json
+{
+  "job_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "status": "completed",
+  "input_source": "url: https://example.com/video.mp4",
+  "created_at": "2026-05-27T03:40:00Z",
+  "updated_at": "2026-05-27T03:40:30Z",
+  "result": {
+    "text": "Hello world, this is a diarized transcription example...",
+    "diarizedTranscript": [
+      {
+        "speaker": "creator",
+        "text": "Hello world, this is a diarized transcription example",
+        "originalText": "Hello world, this is a diarized transcription example",
+        "language": "en",
+        "languageName": "English"
+      }
+    ],
+    "audioMode": "spoken-narration",
+    "detectedLanguage": "en",
+    "detectedLanguageName": "English",
+    "languagesUsed": ["en"],
+    "languagesUsedNames": ["English"],
+    "isTranslated": false
+  }
+}
+```
+
+---
+
+### 3. Usage & Quota Queries
+`GET /v1/usage`
+
+Retrieves total usage costs, remaining API limits, and a log of individual provider calls made.
+
+**Response (200 OK):**
+```json
+{
+  "owner": "Your Name",
+  "rate_limit_rpm": 60,
+  "quota_limit_usd": 10.0,
+  "quota_used_usd": 0.05432,
+  "quota_remaining_usd": 9.94568,
+  "total_requests_logged": 1,
+  "usage_logs": [
+    {
+      "job_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+      "provider": "google",
+      "model": "gemini-2.5-flash",
+      "input_tokens": 1205,
+      "output_tokens": 304,
+      "audio_seconds": 0,
+      "cost_usd": 0.001121,
+      "timestamp": "2026-05-27T03:40:30Z"
+    }
+  ]
+}
+```
+
+---
+
+### 4. System Health Check
+`GET /health`
+
+Used for uptime monitors and deployment verification. Returns 200 OK if the local system is operational.
+
+---
+
+## Agent-Optimized Error Schema
+All error responses return structured details to help agents handle recovery programmatically:
+```json
+{
+  "detail": {
+    "error": {
+      "code": "RATE_LIMIT_EXCEEDED",
+      "message": "Rate limit of 60 requests per minute exceeded.",
+      "suggested_action": "Slow down your requests. You can retry in approximately 12 seconds.",
+      "retry_after_seconds": 12,
+      "documentation_url": "https://api.transcribe-agent.example.com/docs#rate-limiting"
+    }
+  }
+}
+```
+**Common Machine-Readable Error Codes:**
+- `MISSING_API_KEY`: API Key header missing.
+- `INVALID_API_KEY`: Key invalid or revoked.
+- `QUOTA_EXCEEDED`: Billing/Credit limit reached.
+- `RATE_LIMIT_EXCEEDED`: Request frequency limit exceeded.
+- `FILE_TOO_LARGE`: Attached file is > 100MB.
+- `JOB_NOT_FOUND`: Job ID is unknown or incorrect.
+
+## Pricing
+Pricing is calculated based on exact resource usage:
+- **Chirp 3 Diarization**: $0.016 per audio minute.
+- **Gemini 2.5 Flash**: $0.30 per million input tokens, $2.50 per million output tokens.
+- **Gemini 2.5 Pro**: $1.25 per million input tokens, $10.00 per million output tokens.
+- **Whisper tiny (Local)**: Free ($0.00).
+Typical short-form video cost: ~$0.02 - $0.08 USD.

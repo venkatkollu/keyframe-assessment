@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Literal
+import datetime
+from typing import Literal, Optional, List, Dict, Any
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DiarizedSegment(BaseModel):
@@ -94,3 +95,33 @@ TRANSCRIPTION_PROMPT = (
     "  - No speech AND no on-screen text → empty diarizedTranscript, empty top-level text, "
     "set audioMode accordingly, isTranslated=false."
 )
+
+
+class ErrorDetail(BaseModel):
+    code: str = Field(..., description="Machine-readable error code", json_schema_extra={"example": "RATE_LIMIT_EXCEEDED"})
+    message: str = Field(..., description="Human-readable description of the error", json_schema_extra={"example": "Rate limit of 3 requests per minute exceeded."})
+    suggested_action: str = Field(..., description="Actionable suggestion for recovery", json_schema_extra={"example": "Slow down your requests. You can retry in approximately 10 seconds."})
+    retry_after_seconds: Optional[int] = Field(None, description="Seconds to wait before retrying, if applicable", json_schema_extra={"example": 10})
+    documentation_url: Optional[str] = Field(None, description="Link to details in documentation", json_schema_extra={"example": "https://api.transcribe-agent.example.com/docs#rate-limiting"})
+
+
+class ErrorResponse(BaseModel):
+    detail: Dict[str, ErrorDetail] = Field(..., description="Error details wrapped under 'error' key")
+
+
+class TranscriptionSubmitResponse(BaseModel):
+    job_id: str = Field(..., description="Unique job identifier", json_schema_extra={"example": "dd0c9a16-d128-442d-b86a-d2526dd0a701"})
+    status: str = Field(..., description="Initial job status", json_schema_extra={"example": "pending"})
+    status_url: str = Field(..., description="Endpoint path to check status", json_schema_extra={"example": "/v1/jobs/dd0c9a16-d128-442d-b86a-d2526dd0a701"})
+    message: str = Field(..., description="Status message", json_schema_extra={"example": "Transcription job accepted and queued."})
+
+
+class TranscriptionJobStatusResponse(BaseModel):
+    job_id: str = Field(..., description="Unique job identifier")
+    status: Literal["pending", "processing", "completed", "failed"] = Field(..., description="Current status of the job")
+    input_source: str = Field(..., description="Description of the input source")
+    created_at: str = Field(..., description="Job creation timestamp in ISO 8601 format")
+    updated_at: str = Field(..., description="Job last-updated timestamp in ISO 8601 format")
+    result: Optional[TranscriptionResult] = Field(None, description="The transcription results, present only if status is completed")
+    error: Optional[ErrorDetail] = Field(None, description="The error details, present only if status is failed")
+
