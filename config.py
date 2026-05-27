@@ -231,10 +231,10 @@ def get_gemini():
 def prepare_media_part(media: pathlib.Path) -> object:
     """Read a local video/audio file and return a Gemini Part with inline bytes."""
     import mimetypes
-    from google.genai import types as _types
+    from google import genai
 
     mime, _ = mimetypes.guess_type(str(media))
     if not mime:
         mime = "video/mp4"
     data = media.read_bytes()
-    return _types.Part.from_bytes(data=data, mime_type=mime)
+    return genai.types.Part.from_bytes(data=data, mime_type=mime)

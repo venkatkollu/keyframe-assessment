@@ -307,8 +307,8 @@ def transcribe_video(
             if path.exists():
                 part = prepare_media_part(path)
             elif media_url:
-                from google.genai import types as _types
-                part = _types.Part.from_uri(file_uri=media_url, mime_type="video/mp4")
+                from google import genai
+                part = genai.types.Part.from_uri(file_uri=media_url, mime_type="video/mp4")
             else:
                 return empty
 
