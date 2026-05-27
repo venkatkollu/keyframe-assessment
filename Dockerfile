@@ -13,7 +13,10 @@ WORKDIR /app
 # Copy dependency specifications
 COPY requirements.txt .
 
-# Install dependencies (utilize pip caching)
+# Install PyTorch CPU-only version first to speed up builds and reduce image size
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
+# Install the rest of the dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Pre-download the Whisper tiny model to avoid runtime downloads

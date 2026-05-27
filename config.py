@@ -15,6 +15,23 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Write GCP credentials file if provided via environment variable (useful for cloud deploys)
+gcp_credentials_json = os.getenv("GOOGLE_CREDENTIALS_JSON") or os.getenv("GCP_SA_KEY")
+if gcp_credentials_json:
+    try:
+        import tempfile
+        temp_dir = pathlib.Path(tempfile.gettempdir())
+        creds_file = temp_dir / "gcp_credentials.json"
+        
+        # Verify if it is valid JSON before writing
+        creds_data = json.loads(gcp_credentials_json)
+        creds_file.write_text(json.dumps(creds_data))
+        
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(creds_file)
+        print(f"Successfully loaded GCP credentials from env var to {creds_file}", flush=True)
+    except Exception as e:
+        print(f"Failed to load GCP credentials from env var: {e}", flush=True)
+
 # ---------------------------------------------------------------------------
 # Data / cache directories
 # ---------------------------------------------------------------------------
