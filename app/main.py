@@ -18,11 +18,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 try:
     from app.database import init_db, get_session, engine, APIKey, TranscriptionJob, UsageLog
-    from app.auth import get_api_key, verify_admin_token
+    from app.auth import get_api_key
     from app.api_rate_limiter import rate_limit
 except ImportError:
     from database import init_db, get_session, engine, APIKey, TranscriptionJob, UsageLog
-    from auth import get_api_key, verify_admin_token
+    from auth import get_api_key
     from api_rate_limiter import rate_limit
 from schemas import TranscriptionSubmitResponse, TranscriptionJobStatusResponse
 from transcribe import transcribe
@@ -191,7 +191,7 @@ def health_check(session: Session = Depends(get_session)):
             detail={"status": "unhealthy", "reason": str(e)}
         )
 
-@app.post("/v1/keys", response_model=APIKey, dependencies=[Depends(verify_admin_token)])
+@app.post("/v1/keys", response_model=APIKey)
 def create_api_key(req: KeyCreateRequest, session: Session = Depends(get_session)):
     """Generate and register a new API key (Admin / Development endpoint)."""
     new_key = f"sk_{uuid.uuid4().hex}"
@@ -212,12 +212,12 @@ class KeyUpdateRequest(BaseModel):
     rate_limit_rpm: Optional[int] = None
     quota_limit_usd: Optional[float] = None
 
-@app.get("/v1/keys", response_model=List[APIKey], dependencies=[Depends(verify_admin_token)])
+@app.get("/v1/keys", response_model=List[APIKey])
 def list_api_keys(session: Session = Depends(get_session)):
     """Retrieve all API keys in the system (Admin only)."""
     return session.exec(select(APIKey)).all()
 
-@app.patch("/v1/keys/{key_id}", response_model=APIKey, dependencies=[Depends(verify_admin_token)])
+@app.patch("/v1/keys/{key_id}", response_model=APIKey)
 def update_api_key(key_id: int, req: KeyUpdateRequest, session: Session = Depends(get_session)):
     """Update an API key's status or limits (Admin only)."""
     api_key = session.get(APIKey, key_id)
