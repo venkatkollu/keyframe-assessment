@@ -1,3 +1,13 @@
+---
+title: Keyframe Transcribe
+emoji: 🎙️
+colorFrom: indigo
+colorTo: pink
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Video Transcription Pipeline
 
 Multi-stage transcription pipeline for short-form video/audio content, producing structured output with speaker diarization, multi-language detection, English translation, and on-screen text extraction.
