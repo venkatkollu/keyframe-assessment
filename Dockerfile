@@ -26,7 +26,7 @@ RUN python -c "import whisper; whisper.load_model('tiny')"
 COPY . .
 
 # Expose port for FastAPI
-EXPOSE 8000
+EXPOSE 7860
 
 # Start FastAPI application using Uvicorn
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-7860}"]
