@@ -175,3 +175,33 @@ Run the automated integration test suite:
    .venv\Scripts\python test_api.py
    ```
 
+## Authentication & API Key Management
+
+The API requires authentication for rate-limiting, usage tracking, and budget quota enforcement.
+
+### 1. Generating an API Key
+You can generate keys directly from the developer playground:
+1. Open the portal in your browser (e.g., `http://127.0.0.1:8000/` or your deployed Space URL).
+2. Look at the left sidebar, and click the **`+` (Plus)** button next to the **TranscribeAgent** logo.
+3. In the popup dialog:
+   - Provide an **Agent Name / Owner** (e.g., `Agent-X`).
+   - Customize the **Rate Limit (RPM)** (Default: `60`).
+   - Customize the **Usage Budget Limit (USD)** (Default: `10.0`).
+4. Click **Generate Key**. The portal will automatically copy the new key to your clipboard and activate it.
+
+### 2. Using Your Key in API Requests
+Add the key to your HTTP headers as `X-API-Key`:
+```bash
+curl -X POST "http://127.0.0.1:8000/v1/transcribe" \
+     -H "X-API-Key: sk_your_api_key_here" \
+     -H "Content-Type: application/json" \
+     -d '{"url": "https://www.w3schools.com/html/mov_bbb.mp4"}'
+```
+
+### 3. Programmatic Usage & Billing Checks
+Callers can query their current quota usage, remaining budget, and request logs programmatically:
+```bash
+curl -X GET "http://127.0.0.1:8000/v1/usage" \
+     -H "X-API-Key: sk_your_api_key_here"
+```
+
